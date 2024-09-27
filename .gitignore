@@ -1,0 +1,14 @@
+# Ignore Visual Studio Code settings
+.vscode/
+
+# Ignore executable files
+*.app
+*.bat
+*.cgi
+*.com
+*.exe
+*.gadget
+*.jar
+*.pif
+*.vb
+*.wsf
