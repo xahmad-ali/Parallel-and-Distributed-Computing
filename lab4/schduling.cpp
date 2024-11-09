@@ -10,7 +10,7 @@ int main()
 #pragma omp parallel
     {
 
-#pragma omp for schedule(static,5)
+#pragma omp for schedule(static,8)
         for (int i = 0; i < n; i++)
         {
             int thread_id = omp_get_thread_num();

@@ -34,27 +34,40 @@ int main(){
     int num=20;
     long long fac=0;
     int fibnum=10;
-    int fab=0;
     
 
      #pragma omp parallel
     {
          #pragma omp sections
-        {
+         {
+            #pragma omp section
+            {
+                fibonacci(fibnum);
+            }
+
             #pragma omp section
             {
                 fac = factorial(num);
                 printf("The factorial of %d is %lld \n",num,fac);
             }
-
-             #pragma omp section
-            {
-                fibonacci(fibnum);
-            }
-        
-        }
+         }
     }
 
 
     return 0;
 }
+
+// #pragma omp sections
+//         {
+//             #pragma omp section
+//             {
+//                 fac = factorial(num);
+//                 printf("The factorial of %d is %lld \n",num,fac);
+//             }
+
+//              #pragma omp section
+//             {
+//                 fibonacci(fibnum);
+//             }
+        
+//         }

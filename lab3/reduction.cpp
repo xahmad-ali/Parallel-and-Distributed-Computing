@@ -10,7 +10,7 @@ int main()
 
 // Parallel for loop with reduction
 // Reduction important in situations where multiple threads are modifying a shared variable
-#pragma omp parallel for reduction(+ : sum)
+#pragma omp parallel for reduction(+ :sum)
     for (int i = 0; i < arrL; i++)
     {
         sum = sum + arr[i];

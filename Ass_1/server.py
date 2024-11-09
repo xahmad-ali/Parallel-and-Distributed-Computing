@@ -8,7 +8,6 @@ def matrixing(A,B,result,row):
             result[row][j] += A[row][k] * B[k][j] 
      
      
-     
 
 def shaping(marix):
     #This splits the string marix into a list of substrings using spaces as delimiters.
