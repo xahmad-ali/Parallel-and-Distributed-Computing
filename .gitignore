@@ -1,5 +1,7 @@
 # Ignore Visual Studio Code settings
 .vscode/
+.midlab/
+.project/
 
 # Ignore executable files
 *.app
@@ -14,3 +16,4 @@
 *.wsf
 *zip
 *midlab
+*PNG

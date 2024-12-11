@@ -1,23 +1,17 @@
 import re
-from concurrent.futures import ProcessPoolExecutor
-from flask import Flask, render_template, request, redirect, url_for, flash
-import os
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
-# Initialize Flask app
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Needed for flashing messages
 
-# Function for searching in chunks
-def search_chunk(lines_with_numbers, pattern):
+def search_chunk(lines_with_numbers, pattern,file_path):
     """Searches for the pattern in a chunk of lines, and includes line numbers."""
     matches = []
     for line_number, line in lines_with_numbers:
         if re.search(pattern, line, re.IGNORECASE):  # Case-insensitive search
-            matches.append(f"{line_number}: {line.strip()}")  # Format with line number
+            matches.append(f"{line_number}: {line.strip()}")  # Format with line number, remove whitespace
+            print(f"In {file_path} line where match is found: {line_number} and line is {line}" )
     return matches
 
-# Function to read files in chunks
-def read_file_in_chunks(file_path, chunk_size=100):
+def read_file_in_chunks(file_path, chunk_size):
     """Reads a file in chunks of lines, including line numbers."""
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -31,75 +25,57 @@ def read_file_in_chunks(file_path, chunk_size=100):
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
 
-# Function to search for a pattern in a file in chunks
-def search_file_in_chunks(file_path, pattern, chunk_size=100):
-    """Splits the file into chunks and searches each chunk for the pattern."""
+
+def search_file_in_chunks(file_path, pattern, chunk_size):
+    """Splits the file into chunks and searches each chunk for the pattern using threads."""
     matches = []
     chunks = read_file_in_chunks(file_path, chunk_size)
 
-    with ProcessPoolExecutor() as executor:
-        threads = [executor.submit(search_chunk, chunk, pattern) for chunk in chunks]
-        for thread in threads:
+    # Use ThreadPoolExecutor to search each chunk in parallel
+    with ThreadPoolExecutor() as thread_executor:
+        futures = [thread_executor.submit(search_chunk, chunk, pattern,file_path) for chunk in chunks]
+        for future in futures:
             try:
-                chunk_matches = thread.result()  # Get the result from the future
-                matches.extend(chunk_matches)  # Add matches to the overall list
+                chunk_matches = future.result()  # Get the result from the future
+                matches.extend(chunk_matches)    # Add matches to the overall list
             except Exception as e:
                 print(f"Error processing chunk in {file_path}: {e}")
 
     return matches
 
-# Function to perform parallel search across multiple files
-def parallel_search(file_paths, pattern, chunk_size=100):
+
+def parallel_search(file_paths, pattern, chunk_size):
     """Performs parallel search across multiple files, using chunk-based logic."""
-    all_matches = []
-    with ProcessPoolExecutor() as executor:
-        threads = {executor.submit(search_file_in_chunks, path, pattern, chunk_size): path for path in file_paths}
-        for thread in threads:
-            file_path = threads[thread]
+    with ProcessPoolExecutor() as process_executor:
+        futures = {process_executor.submit(search_file_in_chunks, path, pattern, chunk_size): path for path in file_paths}
+        
+        for future in as_completed(futures):
+            file_path = futures[future]
             try:
-                matches = thread.result()
-                if matches:
-                    all_matches.append(f"\nMatches in {file_path}:\n" + "\n".join(matches))
-                else:
-                    all_matches.append(f"\nNo matches found in {file_path}.\n")
+                matches = future.result()
+                if len(matches) == 0:
+                    # print(f"\nMatches in {file_path}:")
+                    # # for match in matches:
+                    # #     print("Line where match is found: " + match)
+                    print(f"\nNo matches found in {file_path}.\n")
+                # else:
+                    # print(f"\nNo matches found in {file_path}.\n")
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
-    return "\n".join(all_matches)
 
-# Flask route for the homepage
-@app.route('/')
-def index():
-    return render_template('index.html')
 
-# Flask route to handle file upload and search
-@app.route('/search', methods=['POST'])
-def search():
-    pattern = request.form['pattern']
-    if not pattern:
-        flash('Please enter a search pattern.')
-        return redirect(url_for('index'))
-
-    # Handle file uploads
-    uploaded_files = request.files.getlist('files')
-    if not uploaded_files:
-        flash('Please upload at least one file.')
-        return redirect(url_for('index'))
-
-    # Save the uploaded files temporarily and perform the search
+if __name__ == "__main__":
+    pattern = "chin tapak dum dum"
     file_paths = []
-    for file in uploaded_files:
-        file_path = os.path.join('uploads', file.filename)
-        file.save(file_path)
-        file_paths.append(file_path)
-
-    # Perform the search
-    results = parallel_search(file_paths, pattern)
-
-    # Remove the uploaded files after searching
-    for file_path in file_paths:
-        os.remove(file_path)
-
-    return render_template('results.html', pattern=pattern, results=results)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    
+    while True:
+        file_name = input("Enter name of file with .txt or press 'z' to go for search: \n")
+        if file_name == 'z':
+            break
+        else:
+            file_paths.append(file_name)
+    
+    if len(file_paths) <= 0:
+        print("Please enter name of file")
+    else:
+        parallel_search(file_paths, pattern, chunk_size=5)
