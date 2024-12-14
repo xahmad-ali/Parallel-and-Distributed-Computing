@@ -1,7 +1,15 @@
 # Ignore Visual Studio Code settings
 .vscode/
 .midlab/
-.project/
+._pycache_/
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+logs
+*.log
+*.log.*
 
 # Ignore executable files
 *.app
