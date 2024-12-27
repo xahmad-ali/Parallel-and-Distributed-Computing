@@ -10,6 +10,9 @@ yarn-error.log
 logs
 *.log
 *.log.*
+temp
+*.temp
+*.temp*
 
 # Ignore executable files
 *.app
